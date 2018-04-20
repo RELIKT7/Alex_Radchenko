@@ -1,0 +1,168 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+
+namespace Triangulation
+{
+    public class Massive<T>
+    {
+        private byte count;
+        private T[] arr;
+        private byte index;
+
+        public Massive()
+        {
+            this.count = 1;
+            this.index = 0;
+            this.arr = new T[1];
+        }
+
+        public Massive(byte count)
+        {
+            this.count = count;
+            this.index = 0;
+            this.arr = new T[this.count];
+        }
+
+        public Massive(T[] t)
+        {
+            this.count = 1;
+            this.index = 0;
+            this.arr = new T[this.count];
+            for (int i = 0; i < t.Length; i++)
+                CheckIndexOutOfRange(t[i]);
+        }
+
+        public T this[int i]
+        {
+            get { return this.arr[i]; }
+            set { this.arr[i] = value; }
+        }
+
+        public T[] GetMassive
+        {
+            get => this.arr;
+            set => this.arr = value;
+        }
+
+        public T Add
+        {
+            set => this.CheckIndexOutOfRange(value);
+        }
+
+        public void AddM(T t)
+        {
+            this.CheckIndexOutOfRange(t);
+        }
+
+        public T Drop
+        {
+            set
+            {
+                this.arr = Dropping(value).arr;
+                this.count = Dropping(value).count;
+                this.index = Dropping(value).index;
+            }
+        }
+
+        public void DropM(T t)
+        {
+            this.arr = Dropping(t).arr;
+            this.count = Dropping(t).count;
+            this.index = Dropping(t).index;
+        }
+
+        private Massive<T> Dropping(T t)
+        {
+            Massive<T> mass = new Massive<T>((byte)(this.arr.Length - 1));
+            
+            for (int i = 0; i < this.arr.Length; i++)
+            {
+                if (!this.arr[i].Equals(t) && this.arr.Contains(t))
+                {
+                    mass.arr.SetValue(this.arr[i], mass.index);
+                    mass.index++;
+                }
+            }
+
+            return mass;
+        }
+
+        public void DropWithIndex(int k)
+        {
+            Massive<T> mass = new Massive<T>((byte)(this.arr.Length - 1));
+
+            
+            for (int i = 0, j=0; i < this.arr.Length; i++)
+            {
+                if (i == k)
+                {
+                    j = -1;
+                    continue;
+                }
+                mass.arr[i + j] = this.arr[i];
+            }
+            this.arr = mass.arr;
+            this.index--;
+        }
+
+        public void SetM(T t, byte index)
+        {
+            this.CheckIndexOutOfRange(t, index);
+        }
+
+        private void CheckIndexOutOfRange(T t)
+        {
+            try
+            {
+                //this.arr.SetValue(t, this.index);
+                
+                this.arr[this.index] = t;              
+            }
+            catch (Exception)
+            {
+                T[] a = new T[this.arr.Length + 1];
+                for (int i = 0; i < this.arr.Length; i++)
+                    a[i] = this.arr[i];
+                this.arr = a;
+                this.arr[this.index] = t;
+                //this.index++;
+                this.count++;
+                //MessageBox.Show(e.Message + "\n" + this.arr.Length.ToString());
+            }
+            this.index++;
+        }
+
+        private void CheckIndexOutOfRange(T t, byte index)
+        {
+            try { this.arr.SetValue(t, index); }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.Message + "\nИндекс вне границ массива.\n" + this.arr.Length.ToString());
+            }
+        }
+
+        public T First { get => this.arr[0]; }
+
+        public T Last { get => this.arr[this.arr.Length - 1]; }
+
+        public T Neighbor(int index)
+        {
+            if (Math.Abs(index) >= this.count)
+            {
+                bool negative = index >= 0;
+                index = Math.Abs(index) % this.count;
+                if (!negative) index = -index;
+                
+                //index = this.count - index;
+            }
+            else if (index < 0)
+                index = this.count + index;
+                
+            return this.arr[index];
+        }
+    }
+}
