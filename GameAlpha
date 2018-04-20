@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+
+</style>
+<script>
+var enemies = new Array(5);
+var healthes = new Array(enemies.length);
+var score = 0;
+
+function Load(){
+	var id=0;
+	for(var i=0;i< enemies.length;i++){
+		enemies[i] = new Enemy(id);
+		healthes[i] = parseInt(Math.random() * 5);
+		if(healthes[i]<1) healthes[i]=1;
+		id++;
+//		alert(enemies[i].obj.id + enemies[i].obj.style.width);
+	}
+	setInterval(EnemyMove, 10);
+	setInterval(PointMove, 1000);
+
+	BackGroundStyle();
+}
+
+function Enemy(id){
+	this.obj = document.createElement("div");
+	this.obj.id = "object"+id.toString();
+	ObjectResize(this);
+	var eId = id;
+	function Click(){
+		healthes[eId]--;
+		if(healthes[eId] < 1){
+			ObjectResize(enemies[eId]);
+			healthes[eId]=parseInt(Math.random() * 5);
+			if(healthes[eId]<1) healthes[eId]=1;
+			score += 5;
+		}
+		else if(healthes[eId] >= 1) score++;
+	}
+
+	this.obj.onmousedown = Click;
+	document.body.appendChild(this.obj);
+}
+
+function ObjectResize(enemies){
+	var enemy = enemies;
+	enemy.speed = (Math.random().toFixed(1) * 4);
+	if(enemy.speed < 0.4) enemy.speed = 0.4;
+	enemy.rect = {};
+	enemy.rect.width = Math.random();
+	if(enemy.rect.width < .3) enemy.rect.width = parseInt(.3 * 250);
+	else enemy.rect.width = parseInt(enemy.rect.width * 250);
+	enemy.rect.height = enemy.rect.width;
+ 	enemy.rect.x = parseInt(Math.random().toFixed(1) * (window.innerWidth - enemy.rect.width));
+	enemy.rect.y = parseInt(Math.random().toFixed(1) * (window.innerHeight - enemy.rect.height));
+
+	enemy.obj.style.position = "fixed";
+	enemy.obj.style.left = enemy.rect.x + "px";
+	enemy.obj.style.top = enemy.rect.y + "px";
+	enemy.obj.style.width = enemy.rect.width + "px";
+	enemy.obj.style.height = enemy.rect.height + "px";
+	enemy.obj.style.visibility = "visible";
+	enemy.obj.style.backgroundColor = RandomColor();
+	enemy.obj.style.opacity = Math.random().toFixed(2);
+	if(enemy.obj.style.opacity < .5) enemy.obj.style.opacity = .5;
+	 enemy.obj.style.zIndex = 990;
+	return enemy;
+}
+
+function EnemyMove(){
+	for(var i=0;i < enemies.length;i++){
+		var point;
+		for(var j=0, k=0; j<points.length; j++){
+			var hyp0 = Hypotenuse(points[j], enemies[i].rect);
+			var hyp1 = Hypotenuse(points[k], enemies[i].rect);
+			if(j!=k){
+				if(hyp1 > hyp0) k=j;
+				point = points[k];
+			}
+		}
+
+		if(point.x > enemies[i].rect.x && window.innerWidth > (enemies[i].rect.x + enemies[i].rect.width)){
+			enemies[i].rect.x += enemies[i].speed;
+		}
+		else 	if(point.x < enemies[i].rect.x && 0 < enemies[i].rect.x){
+			enemies[i].rect.x -= enemies[i].speed;
+		}
+		enemies[i].obj.style.left = enemies[i].rect.x - enemies[i].rect.width / 2 + "px";
+		if(point.y > enemies[i].rect.y && window.innerHeight > (enemies[i].rect.y + enemies[i].rect.height)){
+				 enemies[i].rect.y += enemies[i].speed;
+		}
+		else if(point.y < enemies[i].rect.y && 0 < enemies[i].rect.y){
+			enemies[i].rect.y -= enemies[i].speed;
+			}
+		enemies[i].obj.style.top = enemies[i].rect.y - enemies[i].rect.height / 2 + "px";
+		Intersect(point, enemies[i].rect);
+	}
+}
+
+function Hypotenuse(p, r){
+	var hyp, w, h;
+	var rx = r.x + r.width / 2;
+	var ry = r.y + r.height / 2;
+	if(p.x > rx) w = p.x - rx;
+	else w = rx - p.x;
+	if(p.y > ry) h = p.y - ry;
+	else h = ry - p.y;
+	hyp = Math.sqrt(Math.pow(w, 2) + Math.pow(h, 2));
+	return hyp;
+}
+
+function Intersect(point, rect){
+	if((point.x > rect.x && point.x < rect.width) && (point.y > rect.y && point.y < rect.height)){
+		PointMove();
+	}
+}
+
+function RandomColor(){
+	var str = "#";
+	for (var i = 0, k = 0; i < 3; i++){
+		k = parseInt(Math.random() * 200);
+		if (k < 16) str += "0" + k.toString(16);
+		else str += k.toString(16);
+	}
+	return str;
+}
+
+//var point=0;
+var points = new Array(7);
+function PointMove(){
+	//point = { x : parseInt(Math.random() * 1400), y : parseInt(Math.random() * 2000) };
+	for(var i=0; i< points.length; i++){
+		points[i] = { x : parseInt(Math.random() * window.innerWidth), y : parseInt(Math.random() * window.innerHeight)};
+	}
+}
+
+var consoleVisibility = true;
+function Console(){
+	if(consoleVisibility){
+		var consoleText = "Score: " + score + "<br>Console:<br>";
+		consoleText += "Screen(width= " + window.innerWidth + ", height=" + window.innerHeight + ")<br>";
+		consoleText += "Mouse"+window.MouseEvent.clientX+"<br>";
+		for(var i=0; i<points.length; i++){
+			consoleText += "Point" + i + "(x=" + points[i].x + ", y=" + points[i].y + ");<br>";
+		}
+		for(var i = 0; i < enemies.length; i++){
+			consoleText += "Rectangle(x=" + (enemies[i].rect.x + enemies[i].rect.width / 2).toFixed(1) + ", y=" + (enemies[i].rect.y + enemies[i].rect.height / 2).toFixed(1) + ", width=" + enemies[i].rect.width + ", height=" + enemies[i].rect.height + "); Speed=" + enemies[i].speed + "; Health=" + healthes[i] + "; Color=" + enemies[i].obj.style.backgroundColor + "; Opacity=" + enemies[i].obj.style.opacity + ";<br>";
+		}
+		var c = document.getElementById("console");
+		c.style.position = "fixed";
+		c.style.left = "20px";
+		c.style.top = "20px";
+		c.style.right = "20px";
+		c.style.bottom = "20px";
+ 		c.style.height = "auto";
+		c.style.fontSize = "20pt";
+		c.style.paddingLeft = "5pt";
+		c.style.paddingTop = "1pt";
+		c.style.overflow ="scroll";
+		c.style.color = "white";
+ 		c.style.backgroundColor = "black";
+		c.style.opacity = .5;
+		c.innerHTML = consoleText;
+
+		var b = document.getElementById("consoleButton");
+b.style.position = "fixed";
+ 		b.style.top = "auto";
+		b.style.right = c.style.right;
+		b.style.bottom = c.style.bottom;
+	} else {
+		var c = document.getElementById("console");
+		c.style.position = "fixed";
+		c.style.left = "20px";
+		c.style.top = "20px";
+		c.style.right = "20px";
+ 		c.style.bottom = "auto";
+		c.style.height = "auto";
+		c.style.minWidth = "auto";
+		c.style.minWidth = parseInt(c.style.minWidth) + parseInt(document.getElementById("consoleButton").style.width) + "px";
+		c.style.color = "white";
+ 		c.style.backgroundColor = "black";
+		c.style.opacity = .5;
+		c.innerHTML = "Score: " + score;
+
+		var b = document.getElementById("consoleButton");
+b.style.position = "fixed";
+		b.style.top = c.style.top;
+		b.style.right = c.style.right;
+		b.style.bottom = "auto";
+	}
+}
+setInterval(Console, 100);
+function ConsoleClick(){
+	if(consoleVisibility){ 
+		 consoleVisibility = false;
+		document.getElementById("consoleButton").value = "Open";
+	}
+	else{
+		consoleVisibility = true;
+		document.getElementById("consoleButton").value =  "Close";
+	}
+}
+
+bgStr = "";
+function BackGroundStyle(){
+	var bg = document.getElementById("backGround");
+	//var bg = document.body;
+	bg.style.position = "fixed";
+	bg.style.left = "-20px";
+	bg.style.top = "-20px";
+	bg.style.right = "-20px";
+ 	bg.style.bottom = "-20px";
+	bg.style.fontSize = "16pt";
+	bg.style.color = "red";
+ 	bg.style.backgroundColor = "#ddd";
+	bg.style.opacity = .8;
+
+	for(var i=0;i<90;i++){
+		for(var j=0;j<8;j++){
+			bgStr += (parseInt(Math.random() * 10000000000000000)) + "";
+			if(j==7) bgStr += "<br>";
+		}
+	}
+	bg.innerHTML = bgStr;
+}
+
+function DoNothing(){
+	alert("1");
+}
+</script>
+</head>
+<body onload="Load()" ondbclick="DoNothing()">
+<p id="backGround"></p>
+<div id="console"></div>
+<input type="button" id="consoleButton" value="Close" onclick="ConsoleClick()">
+</body>
+</html>
