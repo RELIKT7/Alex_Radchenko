@@ -1,0 +1,168 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Input;
+using Sandbox.Others;
+using Sandbox.GameElements.Item;
+
+namespace Sandbox.GameElements
+{
+    class Player : Creature
+    {
+        private KeyboardState keyboard { get; set; }
+
+        #region Animation
+        protected static Texture2D texture1;
+        protected static Texture2D texture2;
+        bool isMove;
+        int nextFrame;
+
+        double timeNextFrame;
+
+        protected MouseState mouse;
+        #endregion
+
+        public Player(int texWidth, int texHeight, int x, int y, int width, int height,
+            Attributes attrs,
+            int step)
+            : base(texWidth, texHeight, x, y, width, height, attrs, step)
+        {
+            this.nextFrame = 0;
+            this.timeNextFrame = 3;
+        }
+
+        public void Update(GameTime gameTime, Rectangle rectMap)
+        {
+            step -= gameTime.ElapsedGameTime.Milliseconds;
+            keyboard = Keyboard.GetState();
+
+            int speedUp;
+            attrs.balanceMovementSpeed += attrs.MovementSpeed - (int)attrs.MovementSpeed;
+            if (attrs.balanceMovementSpeed >= 1 && attrs.MovementSpeed >= 1)
+            {
+                speedUp = speed * (int)attrs.MovementSpeed + 1;
+                attrs.balanceMovementSpeed--;
+            }
+            else if (attrs.balanceMovementSpeed >= 1 && attrs.MovementSpeed < 1)
+            {
+                speedUp = speed;
+                attrs.balanceMovementSpeed -= 1 + attrs.MovementSpeed;
+            }
+            else speedUp = speed * (int)attrs.MovementSpeed;
+
+            if (step <= 0)
+            {
+                if (keyboard.IsKeyDown(Keys.W) && SmartRect.Rectangle.Y > rectMap.Y)
+                {
+                    if (SmartRect.SideUp)
+                        positionZero.Y += speedUp;
+                    else SmartRect.Move(ref rectMap, positionZero, ref speedUp, true, out positionZero.X, out positionZero.Y);
+                }
+                if (keyboard.IsKeyDown(Keys.S) && SmartRect.Rectangle.Y + SmartRect.Rectangle.Height < rectMap.Y + rectMap.Height)
+                {
+                    if (SmartRect.SideDown)
+                        positionZero.Y -= speedUp;
+                    else SmartRect.Move(ref rectMap, positionZero, ref speedUp, true, out positionZero.X, out positionZero.Y);
+                }
+                if (keyboard.IsKeyDown(Keys.A) && SmartRect.Rectangle.X > rectMap.X)
+                {
+                    if (SmartRect.SideLeft)
+                        positionZero.X += speedUp;
+                    else SmartRect.Move(ref rectMap, positionZero, ref speedUp, false, out positionZero.X, out positionZero.Y);
+                }
+                if (keyboard.IsKeyDown(Keys.D) && SmartRect.Rectangle.X + SmartRect.Rectangle.Width < rectMap.X + rectMap.Width)
+                {
+                    if (SmartRect.SideRight)
+                        positionZero.X -= speedUp;
+                    else SmartRect.Move(ref rectMap, positionZero, ref speedUp, false, out positionZero.X, out positionZero.Y);
+                }
+                step += MaxStep;
+            }
+
+            if (keyboard.IsKeyDown(Keys.A) ||
+                keyboard.IsKeyDown(Keys.D) ||
+                keyboard.IsKeyDown(Keys.W) ||
+                    keyboard.IsKeyDown(Keys.S))
+                isMove = true;
+            else isMove = false;
+            if (keyboard.IsKeyDown(Keys.A))
+                right = false;
+            if (keyboard.IsKeyDown(Keys.D))
+                right = true;
+
+            mouse = Mouse.GetState();
+            Update(gameTime, rectMap, mouse.LeftButton == ButtonState.Pressed, true);
+
+            SmartRect.SideReset();
+
+            attrs.ResistanceUpdate(gameTime, isMove);
+        }
+
+        public void Draw(GameTime gameTime, SpriteBatch spriteBatch)
+        {
+            Rectangle rect = new Microsoft.Xna.Framework.Rectangle(0, 0,
+                this.SmartRect.Rectangle.Width, this.SmartRect.Rectangle.Height);
+            timeNextFrame -= (double)gameTime.ElapsedGameTime.Milliseconds / 100;
+            if (timeNextFrame <= 0)
+            {
+                if (nextFrame >= 6)
+                    nextFrame = 0;
+                else
+                    nextFrame++;
+                timeNextFrame = 5;
+            }
+            if (isMove)
+            {
+                rect = new Microsoft.Xna.Framework.Rectangle(nextFrame * 50, 0,
+                this.SmartRect.Rectangle.Width, this.SmartRect.Rectangle.Height);
+            }
+            Rectangle newRect = this.SmartRect.Rectangle;
+            newRect.Y = this.SmartRect.Rectangle.Y - 20;
+
+            if (right)
+            {
+                newRect.X = this.SmartRect.Rectangle.X + 3;
+                spriteBatch.Draw(texture2, this.SmartRect.Rectangle, rect, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0f);
+                spriteBatch.Draw(texture1, newRect, null, Color.White, 0f, Vector2.Zero, SpriteEffects.FlipHorizontally, 0f);
+            }
+            else
+            {
+                newRect.X = this.SmartRect.Rectangle.X - 3;
+                spriteBatch.Draw(texture2, this.SmartRect.Rectangle, rect, Color.White, 0f, Vector2.Zero, SpriteEffects.FlipHorizontally, 0f);
+                spriteBatch.Draw(texture1, newRect, null, Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0f);
+            }
+
+            Draw(gameTime, spriteBatch, mouse.LeftButton == ButtonState.Pressed);
+        }
+
+        public void Intersects(Unit unit)
+        {
+            SmartRect.Intersects(unit.SmartRect);
+        }
+
+        public void Contains(Rectangle rectContained)
+        {
+            SmartRect.Contains(rectContained);
+        }
+
+        public Rectangle RectangleDrawable
+        {
+            get
+            {
+                return new Rectangle(this.SmartRect.Rectangle.Y - 20,
+                    this.SmartRect.Rectangle.Y - 20,
+                    SmartRect.Rectangle.Width,
+                    SmartRect.Rectangle.Height);
+            }
+        }
+
+        public Attributes Attributes
+        { get { return this.attrs; } }
+
+        public MouseState MouseGetState
+        { get { return mouse; } }
+    }
+}
